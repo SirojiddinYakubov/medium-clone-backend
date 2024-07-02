@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 from users.errors import BIRTH_YEAR_ERROR_MSG
 
@@ -92,3 +93,27 @@ class ChangePasswordSerializer(serializers.Serializer):
         if data['new_password'] == data['old_password']:
             raise serializers.ValidationError("Yangi va eski parollar bir xil bo'lmasligi kerak")
         return data
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        if not User.objects.filter(email=value).exists():
+            raise ValidationError("Email topilmadi.")
+        return value
+
+
+class ForgotPasswordVerifySerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp_code = serializers.CharField(max_length=6)
+    code = serializers.CharField(max_length=50)
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    password = serializers.CharField(min_length=8, write_only=True)
+
+
+class TokenSerializer(serializers.Serializer):
+    token = serializers.CharField()
